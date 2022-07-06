@@ -23,7 +23,7 @@ const renderLinks = ({
                 const itemId = `${parentId}-${idx}`;
 
                 return (
-                    <ListItem key={itemId}>
+                    <ListItem key={itemId} mb={2.5}>
                         <Box mb={1}>
                             <Link
                                 color="gray.800"
@@ -48,7 +48,7 @@ const VideoCard = ({ id, title, publishedAt, linkData }: Video) => {
             <Text fontSize="sm" color="gray.500" fontWeight="normal" mb={1.5}>
                 {format(parseISO(publishedAt), 'MMM d, y')}
             </Text>
-            <Heading as="h3" size="md" mb={2.5} color="purple.700">
+            <Heading as="h3" size="md" mb={3} color="purple.700">
                 <Link
                     href={`https://www.youtube.com/watch?v=${id}`}
                     _hover={{ color: 'purple.800' }}
