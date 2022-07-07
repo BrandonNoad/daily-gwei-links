@@ -7,11 +7,13 @@ import Card from './card';
 const renderLinks = ({
     linkData = [],
     parentId,
-    fallback = null
+    fallback = null,
+    mb = 2.5
 }: {
     linkData?: LinkDataItem[];
     parentId: string;
     fallback?: JSX.Element | null;
+    mb?: number;
 }) => {
     if (linkData.length === 0) {
         return fallback;
@@ -23,8 +25,8 @@ const renderLinks = ({
                 const itemId = `${parentId}-${idx}`;
 
                 return (
-                    <ListItem key={itemId} mb={2.5}>
-                        <Box mb={0.5}>
+                    <ListItem key={itemId} mb={mb}>
+                        <Box>
                             <Link
                                 color="gray.800"
                                 fontWeight="medium"
@@ -34,7 +36,7 @@ const renderLinks = ({
                                 {text || url}
                             </Link>
                         </Box>
-                        {renderLinks({ linkData: children, parentId: itemId })}
+                        {renderLinks({ linkData: children, parentId: itemId, mb: 0.5 })}
                     </ListItem>
                 );
             })}
