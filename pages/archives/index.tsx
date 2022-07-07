@@ -14,12 +14,14 @@ export const getStaticProps: GetStaticProps = async () => {
 
     return {
         props: {
+            title: 'Archives',
             months: Object.keys(allVideosGroupedByMonth).sort().reverse()
         }
     };
 };
 
 type Props = {
+    title: string;
     months: string[];
 };
 

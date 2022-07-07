@@ -24,7 +24,7 @@ const renderLinks = ({
 
                 return (
                     <ListItem key={itemId} mb={2.5}>
-                        <Box mb={1}>
+                        <Box mb={0.5}>
                             <Link
                                 color="gray.800"
                                 fontWeight="medium"

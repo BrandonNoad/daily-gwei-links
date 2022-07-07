@@ -6,7 +6,7 @@ import { parseISO } from 'date-fns';
 
 import VideoList from '../../components/videoList';
 import { fetchAllVideos } from '../../util/airtable';
-import { groupVideosByMonth, getPublishedAtMonth } from '../../util';
+import { groupVideosByMonth, getPublishedAtMonth, getMonthHeading } from '../../util';
 
 export const getStaticPaths: GetStaticPaths = async () => {
     const allVideos = await fetchAllVideos();
@@ -33,10 +33,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
     const videosForMonth = allVideos.filter((video) => getPublishedAtMonth(video) === month);
 
-    return { props: { videos: videosForMonth } };
+    return { props: { title: `Archives - ${getMonthHeading(month)}`, videos: videosForMonth } };
 };
 
-type Props = { videos: Video[] } | { error: { statusCode: number; message: string } };
+type Props =
+    | { title: string; videos: Video[] }
+    | { error: { statusCode: number; message: string } };
 
 const ArchivedVideos: NextPage<Props> = (props) => {
     if ('error' in props) {

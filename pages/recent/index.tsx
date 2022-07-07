@@ -7,10 +7,11 @@ import VideoList from '../../components/videoList';
 export const getStaticProps: GetStaticProps = async () => {
     const recentVideos = await fetchRecentVideos();
 
-    return { props: { recentVideos } };
+    return { props: { title: 'Recent', recentVideos } };
 };
 
 type Props = {
+    title: string;
     recentVideos: Video[];
 };
 

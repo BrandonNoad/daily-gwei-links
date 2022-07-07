@@ -205,9 +205,9 @@ const handler = async (
         const months = Object.keys(groupVideosByMonth(newVideos));
 
         await Promise.all([
-            res.unstable_revalidate('/recent'),
-            res.unstable_revalidate('/archives'),
-            ...months.map((month) => res.unstable_revalidate(`/archives/${month}`))
+            res.revalidate('/recent'),
+            res.revalidate('/archives'),
+            ...months.map((month) => res.revalidate(`/archives/${month}`))
         ]);
     }
 

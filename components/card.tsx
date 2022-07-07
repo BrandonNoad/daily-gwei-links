@@ -9,7 +9,7 @@ const Card = ({ children, ...rest }: Props) => (
     <Box
         bg="white"
         borderRadius="md"
-        boxShadow="md"
+        boxShadow="base"
         borderWidth="1px"
         borderColor="gray.300"
         _hover={{ borderColor: 'gray.400' }}
