@@ -4,13 +4,13 @@ import { SimpleGrid, Box, Text } from '@chakra-ui/react';
 
 import InternalLink from '../../components/internalLink';
 import { fetchAllVideos } from '../../util/airtable';
-import { groupVideosByMonth, getMonthHeading } from '../../util';
+import { groupByMonth, getMonthHeading } from '../../util';
 import Card from '../../components/card';
 
 export const getStaticProps: GetStaticProps = async () => {
     const allVideos = await fetchAllVideos();
 
-    const allVideosGroupedByMonth = groupVideosByMonth(allVideos);
+    const allVideosGroupedByMonth = groupByMonth(allVideos);
 
     return {
         props: {

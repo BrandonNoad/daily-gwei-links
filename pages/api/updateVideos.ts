@@ -1,77 +1,17 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next';
-import type { Video, LinkDataItem } from '../../util/airtable';
+import type { Video } from '../../util/airtable';
 
 import { google, youtube_v3 } from 'googleapis';
 
 import { fetchRecentVideos, addVideos } from '../../util/airtable';
-import { groupVideosByMonth } from '../../util';
+import { groupByMonth } from '../../util';
 
-const generateYouTubeUrl = ({ videoId, timestamp }: { videoId: string; timestamp: string }) => {
-    let timestampParts = timestamp.split(':').map((str) => str.padStart(2, '0'));
-
-    if (timestampParts.length === 2) {
-        timestampParts = ['00', ...timestampParts];
-    }
-
-    if (timestampParts.length !== 3) {
-        throw new Error('Bad implementation!');
-    }
-
-    const [hours, minutes, seconds] = timestampParts.map((part) => +part);
-
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-
-    return `https://www.youtube.com/watch?v=${videoId}&t=${totalSeconds}s`;
-};
-
-const timestampRegex = /^\d?\d:(?:\d?\d:)?\d\d/;
-
-const findTimestamp = (line: string) => line.match(timestampRegex)?.[0] ?? null;
-
-const isUrl = (line: string) => line.startsWith('https');
-
-let parent: LinkDataItem | null = null;
-const generateLinkData = ({
-    id,
-    description
-}: {
+export type YouTubeVideo = {
     id: string;
+    title: string;
     description: string;
-}): LinkDataItem[] => {
-    return description.split('\n').reduce((acc: LinkDataItem[], line: string) => {
-        const timestamp = findTimestamp(line);
-
-        if (timestamp !== null) {
-            parent = {
-                text: `${line.slice(timestamp.length).trim()} (${timestamp})`,
-                url: generateYouTubeUrl({ videoId: id, timestamp }),
-                children: []
-            };
-
-            return [...acc, parent];
-        }
-
-        if (isUrl(line)) {
-            const [url] = line.split(' ');
-
-            const linkDataItem: LinkDataItem = { text: '', url: url.trim() };
-
-            if (parent !== null) {
-                if (parent.children === undefined) {
-                    parent.children = [];
-                }
-
-                parent.children.push(linkDataItem);
-                return acc;
-            }
-
-            return [...acc, linkDataItem];
-        }
-
-        parent = null;
-        return acc;
-    }, []);
+    publishedAt: string;
 };
 
 type ValidNewItem = {
@@ -79,13 +19,13 @@ type ValidNewItem = {
     snippet: { publishedAt: string; title?: string; description?: string };
 };
 
-const fetchNewVideos = async (latestVideos: Video[]) => {
+const fetchNewYouTubeVideos = async (latestVideos: Video[]) => {
     const youtube = google.youtube({
         version: 'v3',
         auth: process.env.YOUTUBE_API_KEY
     });
 
-    let newVideos: Video[] = [];
+    let newYouTubeVideos: YouTubeVideo[] = [];
 
     let pageToken: string | undefined;
     let isNextPage: boolean = true;
@@ -95,7 +35,7 @@ const fetchNewVideos = async (latestVideos: Video[]) => {
         const { data: playlistItemsData } = await youtube.playlistItems.list({
             playlistId: 'PLIMWH1uKd3oE905uSUHdE5hd6e2UpADak',
             part: ['contentDetails'],
-            maxResults: 10,
+            maxResults: 50,
             pageToken
         });
 
@@ -136,18 +76,17 @@ const fetchNewVideos = async (latestVideos: Video[]) => {
 
         const validNewItems: ValidNewItem[] = newItems.filter(isValidNewItem);
 
-        newVideos = newVideos.concat(
+        newYouTubeVideos = newYouTubeVideos.concat(
             validNewItems.map(({ id, snippet: { publishedAt, title, description } }) => ({
                 id,
                 title: title ?? '',
                 description: description ?? '',
-                publishedAt,
-                linkData: generateLinkData({ id, description: description ?? '' })
+                publishedAt
             }))
         );
     }
 
-    return newVideos;
+    return newYouTubeVideos;
 };
 
 type SuccessResponse = {
@@ -177,6 +116,7 @@ const handler = async (
         });
     }
 
+    // From Airtable.
     const recentVideos = await fetchRecentVideos();
 
     // Assumes recentVideos is sorted by publishedAt desc (but ties may exist).
@@ -197,12 +137,12 @@ const handler = async (
         return acc;
     }, []);
 
-    const newVideos = await fetchNewVideos(latestVideos);
+    const newYouTubeVideos = await fetchNewYouTubeVideos(latestVideos);
 
-    if (newVideos.length > 0) {
-        await addVideos(newVideos);
+    if (newYouTubeVideos.length > 0) {
+        await addVideos(newYouTubeVideos);
 
-        const months = Object.keys(groupVideosByMonth(newVideos));
+        const months = Object.keys(groupByMonth(newYouTubeVideos));
 
         await Promise.all([
             res.revalidate('/recent'),

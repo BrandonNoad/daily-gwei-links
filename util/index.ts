@@ -1,16 +1,19 @@
 import { Video } from './airtable';
 
-export const getPublishedAtMonth = (video: Video) => video.publishedAt.slice(0, 'YYYY-MM'.length);
+export const getPublishedAtMonth = (publishedAt: string) => publishedAt.slice(0, 'YYYY-MM'.length);
 
-export const groupVideosByMonth = (videos: Video[]) =>
-    videos.reduce((acc: { [key: string]: Video[] }, video) => {
-        const month = getPublishedAtMonth(video);
+type HasPublishedAt = {
+    publishedAt: string;
+};
+export const groupByMonth = (data: HasPublishedAt[]) =>
+    data.reduce((acc: { [key: string]: HasPublishedAt[] }, item) => {
+        const month = getPublishedAtMonth(item.publishedAt);
 
         if (acc[month] === undefined) {
             acc[month] = [];
         }
 
-        acc[month].push(video);
+        acc[month].push(item);
 
         return acc;
     }, {});

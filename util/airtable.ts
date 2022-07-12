@@ -1,5 +1,6 @@
 import type { AirtableBase } from 'airtable/lib/airtable_base';
 import type { QueryParams } from 'airtable/lib/query_params';
+import type { YouTubeVideo } from '../pages/api/updateVideos';
 
 import Airtable from 'airtable';
 import { z } from 'zod';
@@ -16,9 +17,13 @@ const videosRecordSchema = z.object({
 type VideosRecordFields = z.infer<typeof videosRecordSchema.shape.fields>;
 
 export type LinkDataItem = {
-    text: string;
+    text: null | {
+        value: string;
+        before: string;
+        after: string;
+    };
     url: string;
-    children?: LinkDataItem[];
+    children: LinkDataItem[];
 };
 
 export type Video = Omit<VideosRecordFields, 'linkData'> & { linkData: LinkDataItem[] };
@@ -77,10 +82,80 @@ export const fetchAllVideos = async () => {
     return records.map(recordToVideo);
 };
 
-export const addVideos = async (payload: Video[]) => {
+const generateYouTubeUrl = ({ videoId, timestamp }: { videoId: string; timestamp: string }) => {
+    let timestampParts = timestamp.split(':').map((str) => str.padStart(2, '0'));
+
+    if (timestampParts.length === 2) {
+        timestampParts = ['00', ...timestampParts];
+    }
+
+    if (timestampParts.length !== 3) {
+        throw new Error('Bad implementation!');
+    }
+
+    const [hours, minutes, seconds] = timestampParts.map((part) => +part);
+
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    return `https://www.youtube.com/watch?v=${videoId}&t=${totalSeconds}s`;
+};
+
+const timestampRegex = /^\d?\d:(?:\d?\d:)?\d\d/;
+
+const findTimestamp = (line: string) => line.match(timestampRegex)?.[0] ?? null;
+
+const isUrl = (line: string) => line.startsWith('https');
+
+let parent: LinkDataItem | null = null;
+const generateLinkData = ({
+    id,
+    description
+}: {
+    id: string;
+    description: string;
+}): LinkDataItem[] => {
+    return description.split('\n').reduce((acc: LinkDataItem[], line: string) => {
+        const timestamp = findTimestamp(line);
+
+        if (timestamp !== null) {
+            parent = {
+                text: {
+                    value: timestamp,
+                    before: `${line.slice(timestamp.length).trim()} (`,
+                    after: ')'
+                },
+                url: generateYouTubeUrl({ videoId: id, timestamp }),
+                children: []
+            };
+
+            return [...acc, parent];
+        }
+
+        if (isUrl(line)) {
+            const [url] = line.split(' ');
+
+            const linkDataItem: LinkDataItem = { text: null, url: url.trim(), children: [] };
+
+            if (parent !== null) {
+                parent.children.push(linkDataItem);
+                return acc;
+            }
+
+            return [...acc, linkDataItem];
+        }
+
+        parent = null;
+        return acc;
+    }, []);
+};
+
+// linkData: generateLinkData({ id, description: description ?? '' });
+export const addVideos = async (payload: YouTubeVideo[]) => {
     const base = getAirtableBase();
 
     await base<VideosRecordFields>('videos').create(
-        payload.map((item) => ({ fields: { ...item, linkData: JSON.stringify(item.linkData) } }))
+        payload.map((item) => ({
+            fields: { ...item, linkData: JSON.stringify(generateLinkData(item)) }
+        }))
     );
 };
