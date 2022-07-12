@@ -11,8 +11,8 @@ const Card = ({ children, ...rest }: Props) => (
         borderRadius="md"
         boxShadow="base"
         borderWidth="1px"
-        borderColor="gray.300"
-        _hover={{ borderColor: 'gray.400' }}
+        borderColor="neutral.200"
+        _hover={{ borderColor: 'neutral.300' }}
         {...rest}
     >
         {children}

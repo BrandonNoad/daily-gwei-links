@@ -31,7 +31,11 @@ const ArchivesIndexPage: NextPage<Props> = ({ months }) => {
             <SimpleGrid columns={[2, null, 3]} spacingX={6} spacingY={4} justifyItems="center">
                 {months.map((month) => (
                     <Box key={month}>
-                        <InternalLink _hover={{ color: 'cyan.700' }} href={`/archives/${month}`}>
+                        <InternalLink
+                            color="primary.800"
+                            _hover={{ color: 'primary.900', fontWeight: 'medium' }}
+                            href={`/archives/${month}`}
+                        >
                             <Text fontWeight="medium">{getMonthHeading(month)}</Text>
                         </InternalLink>
                     </Box>
