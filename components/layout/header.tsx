@@ -22,8 +22,8 @@ const Header = () => {
                 borderBottomWidth="1px"
                 borderBottomColor="neutral.200"
             >
-                <Flex align="center" justify="space-between" px={8} h="100%">
-                    <HStack spacing={6} fontSize="md">
+                <Flex align="center" justify="space-between" px={[3, 5, 8]} h="100%">
+                    <HStack spacing={[4, null, 6]} fontSize="md">
                         <Box>
                             <Logo />
                         </Box>

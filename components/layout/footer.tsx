@@ -2,7 +2,7 @@ import { Box, Flex, HStack, Icon, VisuallyHidden, Square, Link, Text } from '@ch
 import { SiYoutube, SiDiscord, SiGithub } from 'react-icons/si';
 
 const Footer = () => (
-    <Box as="footer" position="absolute" bottom={0} left={0} w="100%" px={8}>
+    <Box as="footer" position="absolute" bottom={0} left={0} w="100%" px={[3, 5, 8]}>
         <Flex
             align="center"
             justify="space-between"

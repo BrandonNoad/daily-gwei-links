@@ -55,7 +55,7 @@ const renderLinks = ({
 
 const VideoCard = ({ id, title, publishedAt, linkData }: Video) => {
     return (
-        <Card px={6} py={3}>
+        <Card px={[3, 4, 6]} py={3}>
             <Text fontSize="sm" color="neutral.500" fontWeight="normal" mb={1.5}>
                 {format(parseISO(publishedAt), 'MMM d, y')}
             </Text>

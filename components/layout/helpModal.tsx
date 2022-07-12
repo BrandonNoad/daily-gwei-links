@@ -22,9 +22,9 @@ const AboutLink = ({ href, children }: { href: string; children: React.ReactNode
 
 const HelpModal = ({ isOpen, onClose }: Props) => {
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <Modal isOpen={isOpen} onClose={onClose} size={['sm', 'md', 'lg']}>
             <ModalOverlay />
-            <ModalContent p={6}>
+            <ModalContent p={[4, 5, 6]}>
                 <ModalHeader fontSize="2xl" fontWeight="bold" p={0} mb={4} color="neutral.900">
                     About
                 </ModalHeader>

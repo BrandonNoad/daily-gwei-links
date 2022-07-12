@@ -14,7 +14,7 @@ const Layout = ({ title, children }: Props) => (
         <Head title={title} />
         <Box bg="neutral.50" minHeight="100vh" pt={navbarHeight + 2} position="relative">
             <Header />
-            <Container maxW="container.sm" pb={16}>
+            <Container maxW="container.sm" pb={16} px={[2, 3, 4]}>
                 <Box as="main">
                     <Box>{children}</Box>
                 </Box>
