@@ -16,7 +16,7 @@ const Head = ({ title }: Props) => (
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#2BB0ED" />
     </NextHead>
 );
 
