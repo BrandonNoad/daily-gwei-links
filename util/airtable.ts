@@ -106,7 +106,6 @@ const findTimestamp = (line: string) => line.match(timestampRegex)?.[0] ?? null;
 
 const isUrl = (line: string) => line.startsWith('https');
 
-let parent: LinkDataItem | null = null;
 const generateLinkData = ({
     id,
     description
@@ -114,6 +113,8 @@ const generateLinkData = ({
     id: string;
     description: string;
 }): LinkDataItem[] => {
+    let parent: LinkDataItem | null = null;
+
     return description.split('\n').reduce((acc: LinkDataItem[], line: string) => {
         const timestamp = findTimestamp(line);
 
@@ -149,7 +150,6 @@ const generateLinkData = ({
     }, []);
 };
 
-// linkData: generateLinkData({ id, description: description ?? '' });
 export const addVideos = async (payload: YouTubeVideo[]) => {
     const base = getAirtableBase();
 
