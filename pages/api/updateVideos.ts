@@ -19,6 +19,11 @@ type ValidNewItem = {
     snippet: { publishedAt: string; title?: string; description?: string };
 };
 
+const isString = (val: string | null | undefined): val is string => typeof val === 'string';
+
+const isValidNewItem = (item: youtube_v3.Schema$Video): item is ValidNewItem =>
+    typeof item.id === 'string' && typeof item.snippet?.publishedAt === 'string';
+
 const fetchNewYouTubeVideos = async (latestVideos: Video[]) => {
     const youtube = google.youtube({
         version: 'v3',
@@ -31,7 +36,7 @@ const fetchNewYouTubeVideos = async (latestVideos: Video[]) => {
     let isNextPage: boolean = true;
 
     while (isNextPage) {
-        // Assumes data is ordered by publishedAt desc.
+        // As of 2023-12-07, it seems the data is no longer ordered by publishedAt desc.
         const { data: playlistItemsData } = await youtube.playlistItems.list({
             playlistId: 'PLIMWH1uKd3oE905uSUHdE5hd6e2UpADak',
             part: ['contentDetails'],
@@ -42,48 +47,43 @@ const fetchNewYouTubeVideos = async (latestVideos: Video[]) => {
         pageToken = playlistItemsData.nextPageToken ?? undefined;
         isNextPage = typeof pageToken === 'string';
 
-        const isString = (val: string | null | undefined): val is string => typeof val === 'string';
-
         const videoIds = (playlistItemsData.items ?? [])
+            .filter(({ contentDetails }) => {
+                const videoId = contentDetails?.videoId ?? null;
+                const publishedAt = contentDetails?.videoPublishedAt ?? null;
+
+                if (videoId === null || publishedAt === null) {
+                    return false;
+                }
+
+                return (
+                    latestVideos.length === 0 ||
+                    (publishedAt >= latestVideos[0].publishedAt &&
+                        latestVideos.find((video) => video.id === videoId) === undefined)
+                );
+            })
             .map(({ contentDetails }) => contentDetails?.videoId)
             .filter(isString);
 
-        const { data: videosData } = await youtube.videos.list({
-            part: ['snippet'],
-            id: videoIds
-        });
+        if (videoIds.length > 0) {
+            const { data: videosData } = await youtube.videos.list({
+                part: ['snippet'],
+                id: videoIds
+            });
 
-        const newItems = (videosData.items ?? []).filter(({ id, snippet }) => {
-            const publishedAt = snippet?.publishedAt ?? null;
+            const newItems = videosData.items ?? [];
 
-            if (publishedAt === null) {
-                return false;
-            }
+            const validNewItems: ValidNewItem[] = newItems.filter(isValidNewItem);
 
-            return (
-                latestVideos.length === 0 ||
-                (publishedAt >= latestVideos[0].publishedAt &&
-                    latestVideos.find((video) => video.id === id) === undefined)
+            newYouTubeVideos = newYouTubeVideos.concat(
+                validNewItems.map(({ id, snippet: { publishedAt, title, description } }) => ({
+                    id,
+                    title: title ?? '',
+                    description: description ?? '',
+                    publishedAt
+                }))
             );
-        });
-
-        if (newItems.length < (videosData.items ?? []).length) {
-            isNextPage = false;
         }
-
-        const isValidNewItem = (item: youtube_v3.Schema$Video): item is ValidNewItem =>
-            typeof item.id === 'string' && typeof item.snippet?.publishedAt === 'string';
-
-        const validNewItems: ValidNewItem[] = newItems.filter(isValidNewItem);
-
-        newYouTubeVideos = newYouTubeVideos.concat(
-            validNewItems.map(({ id, snippet: { publishedAt, title, description } }) => ({
-                id,
-                title: title ?? '',
-                description: description ?? '',
-                publishedAt
-            }))
-        );
     }
 
     return newYouTubeVideos;
