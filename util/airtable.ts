@@ -56,7 +56,6 @@ export const fetchRecentVideos = async () => {
     const base = getAirtableBase();
 
     const results = await base<VideosRecordFields>('videos')
-        // .select()
         .select({
             ...commonSelectParams,
             pageSize: 10
@@ -66,6 +65,21 @@ export const fetchRecentVideos = async () => {
     const records = z.array(videosRecordSchema).parse(results);
 
     return records.map(recordToVideo);
+};
+
+export const fetchLatestVideo = async () => {
+    const base = getAirtableBase();
+
+    const results = await base<VideosRecordFields>('videos')
+        .select({
+            ...commonSelectParams,
+            pageSize: 1
+        })
+        .firstPage();
+
+    const records = z.array(videosRecordSchema).parse(results);
+
+    return records.length > 0 ? recordToVideo(records[0]) : null;
 };
 
 export const fetchAllVideos = async () => {
