@@ -74,7 +74,7 @@ const getFrameButtons = ({
 
     if (frameIdx + 1 > video.linkData.length) {
         return [
-            { label: 'Start Over', action: 'post_redirect' },
+            // { label: 'Start Over', action: 'post_redirect' },
             {
                 label: 'Visit Site',
                 action: 'link',
