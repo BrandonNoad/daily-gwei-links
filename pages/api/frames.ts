@@ -12,8 +12,6 @@ const searchParamsSchema = z.object({
     videoId: z.string().optional()
 });
 
-const frameSearchParamSchema = z.union([z.enum(['initial', 'title']), z.coerce.number()]);
-
 const getFrameData = ({
     video,
     frameIdx
@@ -101,13 +99,13 @@ const generateHtml = ({
             const buttonNumber = idx + 1;
 
             const tags = [
-                `<meta name="fc:frame:button:${buttonNumber}" content="${button.label}" />`,
-                `<meta name="fc:frame:button:${buttonNumber}:action" content="${button.action}" />`
+                `<meta property="fc:frame:button:${buttonNumber}" content="${button.label}" />`,
+                `<meta property="fc:frame:button:${buttonNumber}:action" content="${button.action}" />`
             ];
 
             if (button.action === 'link') {
                 tags.push(
-                    `<meta name="fc:frame:button:${buttonNumber}:target" content="${button.target}" />`
+                    `<meta property="fc:frame:button:${buttonNumber}:target" content="${button.target}" />`
                 );
             }
 
@@ -121,9 +119,9 @@ const generateHtml = ({
           <title>${title}</title>
           <meta property="og:title" content="${title}" />
           <meta property="og:image" content="${imageUrl}" />
-          <meta name="fc:frame" content="vNext" />
-          <meta name="fc:frame:image" content="${imageUrl}" />
-          <meta name="fc:frame:post_url" content="${postUrl}" />
+          <meta property="fc:frame" content="vNext" />
+          <meta property="fc:frame:image" content="${imageUrl}" />
+          <meta property="fc:frame:post_url" content="${postUrl}" />
           ${buttonsMeta}
       </head>
     </html>`;

@@ -146,9 +146,12 @@ const handler = async (
 
         await Promise.all([
             res.revalidate('/recent'),
+            res.revalidate('/frame'),
             res.revalidate('/archives'),
             ...months.map((month) => res.revalidate(`/archives/${month}`))
         ]);
+    } else {
+        await res.revalidate('/frame');
     }
 
     return res.status(200).json({ success: true });
