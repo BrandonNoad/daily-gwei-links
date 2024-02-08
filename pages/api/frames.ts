@@ -49,12 +49,12 @@ const getFrameData = ({
             text: 'Thanks for reading!',
             searchParams: new URLSearchParams({ frame: 'title', videoId: video.id }),
             buttons: [
-                { label: 'Start Over', action: 'post' },
                 {
                     label: 'Visit Site',
                     action: 'link',
                     target: 'https://daily-gwei-links.vercel.app/recent'
-                }
+                },
+                { label: 'Start Over', action: 'post' }
             ]
         };
     }
