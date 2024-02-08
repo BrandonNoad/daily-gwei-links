@@ -160,11 +160,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         });
     }
 
-    let frameIdx = searchParamsParseResult.data.frame ?? 'title';
+    const frameSearchParam = searchParamsParseResult.data.frame ?? 'title';
 
-    if (frameIdx === 'initial') {
+    if (frameSearchParam === 'initial') {
         return res.redirect(303, 'https://daily-gwei-links.vercel.app/frame');
     }
+
+    let frameIdx: number | 'title' = frameSearchParam;
 
     if (
         typeof searchParamsParseResult.data.videoId === 'string' &&
