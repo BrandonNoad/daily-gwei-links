@@ -194,7 +194,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
                 color: '#FFFFFF',
                 overlay: {
                     font_family: 'Open Sans',
-                    font_size: frameIdx === 'title' ? 30 : 24,
+                    font_size: frameIdx === 'title' ? 30 : 28,
                     font_weight: 'bold',
                     text: getFrameText({ video, frameIdx })
                 },
