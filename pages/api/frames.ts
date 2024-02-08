@@ -7,6 +7,11 @@ import { parseISO, format } from 'date-fns';
 import { fetchLatestVideo } from '../../util/airtable';
 import { generateImageUrl } from '../../util/cloudinary';
 
+const searchParamsSchema = z.object({
+    frame: z.union([z.enum(['initial', 'title']), z.coerce.number()]).optional(),
+    videoId: z.string().optional()
+});
+
 const frameSearchParamSchema = z.union([z.enum(['initial', 'title']), z.coerce.number()]);
 
 const getFrameData = ({
@@ -17,7 +22,7 @@ const getFrameData = ({
     frameIdx: number | 'title';
 }): {
     text: string;
-    frameSearchParam: string;
+    searchParams: URLSearchParams;
     buttons: Array<
         | { action: 'post'; label: string }
         | { action: 'link'; label: string; target: string }
@@ -27,7 +32,7 @@ const getFrameData = ({
     if (frameIdx === 'title') {
         return {
             text: `${video.title} [${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
-            frameSearchParam: '0',
+            searchParams: new URLSearchParams({ frame: '0', videoId: video.id }),
             buttons: [
                 {
                     label: 'Watch',
@@ -42,9 +47,9 @@ const getFrameData = ({
     if (frameIdx + 1 > video.linkData.length) {
         return {
             text: 'Thanks for reading!',
-            frameSearchParam: 'initial',
+            searchParams: new URLSearchParams({ frame: 'title', videoId: video.id }),
             buttons: [
-                // { label: 'Start Over', action: 'post_redirect' },
+                { label: 'Start Over', action: 'post' },
                 {
                     label: 'Visit Site',
                     action: 'link',
@@ -61,7 +66,7 @@ const getFrameData = ({
             linkDatum.text === null
                 ? linkDatum.url
                 : `${linkDatum.text.before}${linkDatum.text.value}${linkDatum.text.after}`,
-        frameSearchParam: (frameIdx + 1).toString(),
+        searchParams: new URLSearchParams({ frame: (frameIdx + 1).toString(), videoId: video.id }),
         buttons: [
             {
                 label: 'Watch',
@@ -146,22 +151,28 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         });
     }
 
-    const frame = req.query.frame ?? 'title';
+    const searchParamsParseResult = searchParamsSchema.safeParse(req.query);
 
-    const parseResult = frameSearchParamSchema.safeParse(frame);
-
-    if (!parseResult.success) {
+    if (!searchParamsParseResult.success) {
         return res.status(400).json({
             statusCode: 400,
             message: 'Bad Request'
         });
     }
 
-    const frameIdx = parseResult.data;
+    let frameIdx = searchParamsParseResult.data.frame ?? 'title';
 
-    // TODO: Investigate how the post_redirect buttons are supposed to work.
     if (frameIdx === 'initial') {
-        return res.redirect(303, '/frame');
+        return res.redirect(303, 'https://daily-gwei-links.vercel.app/frame');
+    }
+
+    if (
+        typeof searchParamsParseResult.data.videoId === 'string' &&
+        searchParamsParseResult.data.videoId !== video.id
+    ) {
+        // If the video updated while the user was browsing the frame, show the user the title frame
+        // for the new video.
+        frameIdx = 'title';
     }
 
     const frameData = getFrameData({ video, frameIdx });
@@ -172,7 +183,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
     });
 
     const postUrl = new URL('https://daily-gwei-links.vercel.app/api/frames');
-    postUrl.searchParams.set('frame', frameData.frameSearchParam);
+    postUrl.search = frameData.searchParams.toString();
 
     return res
         .setHeader('Content-Type', 'text/html')
