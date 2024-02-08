@@ -16,7 +16,7 @@ export const getStaticProps: GetStaticProps = async () => {
 
     const latestVideo = await fetchLatestVideo();
 
-    const CLOUDINARY_PUBLIC_ID = 'frame_template';
+    const CLOUDINARY_PUBLIC_ID = 'frame_template_v2';
 
     const imageUrl = cloudinary.url(CLOUDINARY_PUBLIC_ID, {
         transformation: [

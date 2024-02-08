@@ -185,7 +185,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         return res.redirect(303, '/frame');
     }
 
-    const CLOUDINARY_PUBLIC_ID = 'frame_template';
+    const CLOUDINARY_PUBLIC_ID = 'frame_template_v2';
 
     // https://cloudinary.com/documentation/layers#text_layer_options
     const imageUrl = cloudinary.url(CLOUDINARY_PUBLIC_ID, {
