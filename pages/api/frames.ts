@@ -3,34 +3,67 @@ import type { Video } from '../../util/airtable';
 
 import { z } from 'zod';
 import { parseISO, format } from 'date-fns';
+import Axios from 'axios';
 
 import { fetchLatestVideo } from '../../util/airtable';
 import { generateImageUrl } from '../../util/cloudinary';
 
-const searchParamsSchema = z.object({
-    frame: z.union([z.enum(['initial', 'title']), z.coerce.number()]).optional(),
-    videoId: z.string().optional()
+// https://hub.freefarcasterhub.com:3281/v1/userDataByFid?fid=8766&user_data_type=2
+// {
+//   "data": {
+//     "type": "MESSAGE_TYPE_USER_DATA_ADD",
+//     "fid": 8766,
+//     "timestamp": 73129709,
+//     "network": "FARCASTER_NETWORK_MAINNET",
+//     "userDataBody": {
+//       "type": "USER_DATA_TYPE_DISPLAY",
+//       "value": "Brandon Noad 🛡️"
+//     }
+//   },
+//   "hash": "0xa4cb205f0fc9bef698f2feb2e3ff7f9d73db65ea",
+//   "hashScheme": "HASH_SCHEME_BLAKE3",
+//   "signature": "sVKwmnM/ci624CTYHvKL3X9R3ToyEAW7IOBnV0nCjFXaCjvfEz5RDM6exnVVmwlZ8lA8ocnTgWbUn36DPJEZAw==",
+//   "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+//   "signer": "0x1cdb93b63792830f278cb74c232ac0179b0bb134ca00cefa9d7e1f1478c88abb"
+// }
+const userDataByFidBodySchema = z.object({
+    data: z.object({
+        userDataBody: z.object({
+            value: z.string()
+        })
+    })
 });
 
-const getFrameData = ({
+const removeEmojis = (str: string) => {
+    return str.replace(/[\u{1F300}-\u{1F6FF}]/gu, '');
+};
+
+type FrameDataButton =
+    | { action: 'post'; label: string }
+    | { action: 'link'; label: string; target: string }
+    | { action: 'post_redirect'; label: string };
+
+const getFrameData = async ({
     video,
-    frameIdx
+    frameIdx,
+    fid
 }: {
     video: Video;
     frameIdx: number | 'title';
-}): {
+    fid: number;
+}): Promise<{
     text: string;
     searchParams: URLSearchParams;
-    buttons: Array<
-        | { action: 'post'; label: string }
-        | { action: 'link'; label: string; target: string }
-        | { action: 'post_redirect'; label: string }
-    >;
-} => {
+    buttons: FrameDataButton[];
+}> => {
     if (frameIdx === 'title') {
         return {
             text: `${video.title} [${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
-            searchParams: new URLSearchParams({ frame: '0', videoId: video.id }),
+            searchParams: new URLSearchParams({
+                frame: '0',
+                videoId: video.id,
+                fid: fid.toString()
+            }),
             buttons: [
                 {
                     label: 'Watch',
@@ -42,10 +75,37 @@ const getFrameData = ({
         };
     }
 
-    if (frameIdx + 1 > video.linkData.length) {
+    const linkDatum = video.linkData.at(frameIdx);
+
+    if (!linkDatum) {
+        let username = '';
+        try {
+            const response = await Axios.get(
+                'https://hub.freefarcasterhub.com:3281/v1/userDataByFid',
+                {
+                    params: { fid: fid, user_data_type: 2 }
+                }
+            );
+
+            const body = userDataByFidBodySchema.parse(response.data);
+
+            username = body.data.userDataBody.value;
+        } catch (err) {
+            // ignore error
+        }
+
+        // Additionally, to include a comma (,) forward slash (/), percent sign (%) or an emoji
+        // character in a text overlay, you must double-escape the % sign within those codes.
+        const cleanName = [',', '/', '%'].reduce((acc, char) => {
+            return acc.replaceAll(char, '');
+        }, removeEmojis(username).trim().split(' ')[0]);
+
         return {
-            text: 'Thanks for reading!',
-            searchParams: new URLSearchParams({ frame: 'title', videoId: video.id }),
+            text: `Thanks for reading${cleanName !== '' ? ` ${cleanName}` : ''}!`,
+            searchParams: new URLSearchParams({
+                frame: 'title',
+                videoId: video.id
+            }),
             buttons: [
                 {
                     label: 'Visit Site',
@@ -57,14 +117,16 @@ const getFrameData = ({
         };
     }
 
-    const linkDatum = video.linkData[frameIdx];
-
     return {
         text:
             linkDatum.text === null
                 ? linkDatum.url
                 : `${linkDatum.text.before}${linkDatum.text.value}${linkDatum.text.after}`,
-        searchParams: new URLSearchParams({ frame: (frameIdx + 1).toString(), videoId: video.id }),
+        searchParams: new URLSearchParams({
+            frame: (frameIdx + 1).toString(),
+            videoId: video.id,
+            fid: fid.toString()
+        }),
         buttons: [
             {
                 label: 'Watch',
@@ -92,7 +154,7 @@ const generateHtml = ({
     title: string;
     imageUrl: string;
     postUrl: string;
-    buttons: ReturnType<typeof getFrameData>['buttons'];
+    buttons: FrameDataButton[];
 }) => {
     const buttonsMeta = buttons
         .flatMap((button, idx) => {
@@ -132,6 +194,37 @@ type ErrorResponse = {
     message: string;
 };
 
+// Example req.body
+// {
+//   "untrustedData": {
+//     "fid": 2,
+//     "url": "https://fcpolls.com/polls/1",
+//     "messageHash": "0xd2b1ddc6c88e865a33cb1a565e0058d757042974",
+//     "timestamp": 1706243218,
+//     "network": 1,
+//     "buttonIndex": 2,
+//     "inputText": "hello world", // "" if requested and no input, undefined if input not requested
+//     "castId": {
+//       "fid": 226,
+//       "hash": "0xa48dd46161d8e57725f5e26e34ec19c13ff7f3b9"
+//     }
+//   },
+//   "trustedData": {
+//     "messageBytes": "d2b1ddc6c88e865a33cb1a565e0058d757042974..."
+//   }
+// }
+
+const bodySchema = z.object({
+    untrustedData: z.object({
+        fid: z.number()
+    })
+});
+
+const searchParamsSchema = z.object({
+    frame: z.union([z.enum(['initial', 'title']), z.coerce.number()]).optional(),
+    videoId: z.string().optional()
+});
+
 const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorResponse>) => {
     if (req.method !== 'POST') {
         return res.status(404).json({
@@ -148,6 +241,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
             message: 'Internal Server Error'
         });
     }
+
+    const bodyParseResult = bodySchema.safeParse(req.body);
+
+    if (!bodyParseResult.success) {
+        return res.status(400).json({
+            statusCode: 400,
+            message: 'Bad Request'
+        });
+    }
+
+    const { fid } = bodyParseResult.data.untrustedData;
 
     const searchParamsParseResult = searchParamsSchema.safeParse(req.query);
 
@@ -175,7 +279,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         frameIdx = 'title';
     }
 
-    const frameData = getFrameData({ video, frameIdx });
+    const frameData = await getFrameData({ video, frameIdx, fid });
 
     const imageUrl = generateImageUrl({
         fontSize: frameIdx === 'title' ? 30 : 28,
