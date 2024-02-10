@@ -6,7 +6,9 @@ import { parseISO, format } from 'date-fns';
 import Axios from 'axios';
 
 import { fetchLatestVideo } from '../../util/airtable';
-import { generateImageUrl } from '../../util/cloudinary';
+import { generateImageUrl } from '../../util/ogImage';
+
+const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
 
 // https://hub.freefarcasterhub.com:3281/v1/userDataByFid?fid=8766&user_data_type=2
 // {
@@ -33,10 +35,6 @@ const userDataByFidBodySchema = z.object({
         })
     })
 });
-
-const removeEmojis = (str: string) => {
-    return str.replace(/[\u{1F300}-\u{1F6FF}]/gu, '');
-};
 
 type FrameDataButton =
     | { action: 'post'; label: string }
@@ -80,12 +78,11 @@ const getFrameData = async ({
     if (!linkDatum) {
         let username = '';
         try {
-            const response = await Axios.get(
-                'https://hub.freefarcasterhub.com:3281/v1/userDataByFid',
-                {
-                    params: { fid: fid, user_data_type: 2 }
-                }
-            );
+            // https://hub.freefarcasterhub.com:3281 stopped working
+            const HUB_BASE_URL = 'https://www.noderpc.xyz/farcaster-mainnet-hub';
+            const response = await Axios.get(`${HUB_BASE_URL}/v1/userDataByFid`, {
+                params: { fid: fid, user_data_type: 2 }
+            });
 
             const body = userDataByFidBodySchema.parse(response.data);
 
@@ -94,14 +91,8 @@ const getFrameData = async ({
             // ignore error
         }
 
-        // Additionally, to include a comma (,) forward slash (/), percent sign (%) or an emoji
-        // character in a text overlay, you must double-escape the % sign within those codes.
-        const cleanName = [',', '/', '%'].reduce((acc, char) => {
-            return acc.replaceAll(char, '');
-        }, removeEmojis(username).trim().split(' ')[0]);
-
         return {
-            text: `Thanks for reading${cleanName !== '' ? ` ${cleanName}` : ''}!`,
+            text: `Thanks for reading${username !== '' ? ` ${username}` : ''}!`,
             searchParams: new URLSearchParams({
                 frame: 'title',
                 videoId: video.id
@@ -110,7 +101,7 @@ const getFrameData = async ({
                 {
                     label: 'Visit Site',
                     action: 'link',
-                    target: 'https://daily-gwei-links.vercel.app/recent'
+                    target: `${BASE_URL}/recent`
                 },
                 { label: 'Start Over', action: 'post' }
             ]
@@ -265,7 +256,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
     const frameSearchParam = searchParamsParseResult.data.frame ?? 'title';
 
     if (frameSearchParam === 'initial') {
-        return res.redirect(303, 'https://daily-gwei-links.vercel.app/frame');
+        return res.redirect(303, `${BASE_URL}/frame`);
     }
 
     let frameIdx: number | 'title' = frameSearchParam;
@@ -281,12 +272,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
 
     const frameData = await getFrameData({ video, frameIdx, fid });
 
-    const imageUrl = generateImageUrl({
+    const imageUrl = await generateImageUrl({
         fontSize: frameIdx === 'title' ? 30 : 28,
+        fontWeight: 600,
         text: frameData.text
     });
 
-    const postUrl = new URL('https://daily-gwei-links.vercel.app/api/frames');
+    const postUrl = new URL(`${BASE_URL}/api/frames`);
     postUrl.search = frameData.searchParams.toString();
 
     return res

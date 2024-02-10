@@ -4,8 +4,10 @@ import type { Video } from '../../util/airtable';
 import NextHead from 'next/head';
 
 import { fetchLatestVideo } from '../../util/airtable';
-import { generateImageUrl } from '../../util/cloudinary';
+import { generateImageUrl } from '../../util/ogImage';
 import VideoList from '../../components/videoList';
+
+const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
 
 export const getStaticProps: GetStaticProps = async () => {
     const latestVideo = await fetchLatestVideo();
@@ -14,7 +16,11 @@ export const getStaticProps: GetStaticProps = async () => {
         props: {
             title: 'The Daily Gwei Refuel Show Notes',
             latestVideo,
-            imageUrl: generateImageUrl({ fontSize: 36, text: 'The Daily Gwei Refuel Show Notes' })
+            imageUrl: await generateImageUrl({
+                fontSize: 36,
+                fontWeight: 700,
+                text: 'The Daily Gwei Refuel Show Notes'
+            })
         }
     };
 };
@@ -36,10 +42,7 @@ const FramePage: NextPage<Props> = ({ title, latestVideo, imageUrl }) => {
                 <meta property="fc:frame" content="vNext" />
                 <meta property="fc:frame:image" content={imageUrl} />
                 <meta property="fc:frame:button:1" content="Let's get into it!" />
-                <meta
-                    property="fc:frame:post_url"
-                    content="https://daily-gwei-links.vercel.app/api/frames"
-                />
+                <meta property="fc:frame:post_url" content={`${BASE_URL}/api/frames`} />
             </NextHead>
             {content}
         </>
