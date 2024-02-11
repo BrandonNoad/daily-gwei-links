@@ -44,8 +44,8 @@ const FramePage: NextPage<Props> = ({ title, imageUrl }) => {
                 <meta property="og:image" content={imageUrl} />
                 <meta property="fc:frame" content="vNext" />
                 <meta property="fc:frame:image" content={imageUrl} />
-                <meta property="fc:frame:button:1" content="Let's get into it!" />
-                <meta property="fc:frame:post_url" content={`${BASE_URL}/api/search/frames`} />
+                <meta property="fc:frame:button:1" content="Start" />
+                <meta property="fc:frame:post_url" content={`${BASE_URL}/api/frames/search`} />
             </NextHead>
             <Card px={[3, 4, 6]} py={3} color="neutral.900">
                 <Text mb={1} fontWeight="semibold">
