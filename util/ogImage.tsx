@@ -10,7 +10,7 @@ export const generateImageUrl = async ({
 }: {
     fontSize: number;
     fontWeight: number;
-    text: string;
+    text: string | string[];
 }) => {
     const imageResponse = new ImageResponse(
         (
@@ -33,16 +33,20 @@ export const generateImageUrl = async ({
                     alt="logo"
                     style={{ position: 'absolute', top: 16, left: 16, width: 40, height: 40 }}
                 />
-                <div
-                    style={{
-                        fontSize,
-                        fontWeight,
-                        color: 'white',
-                        whiteSpace: 'pre-wrap'
-                    }}
-                >
-                    {text}
-                </div>
+                {(typeof text === 'string' ? [text] : text).map((str) => (
+                    <div
+                        key={str}
+                        style={{
+                            marginBottom: 24,
+                            fontSize,
+                            fontWeight,
+                            color: 'white',
+                            whiteSpace: 'pre-wrap'
+                        }}
+                    >
+                        {str}
+                    </div>
+                ))}
             </div>
         ),
         // 1.91:1 aspect ratio

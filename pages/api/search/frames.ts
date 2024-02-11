@@ -955,7 +955,10 @@ const forbidden = async ({ res }: { res: NextApiResponse }) => {
     const imageUrl = await generateImageUrl({
         fontSize: 30,
         fontWeight: 600,
-        text: 'Sorry! You are not authorized to use this frame.\n\nClick this image to view the list of eligible NFT collections.'
+        text: [
+            'Sorry! You are not authorized to use this frame.',
+            'Click this image to view the list of eligible NFT collections.'
+        ]
     });
 
     return res
@@ -974,7 +977,7 @@ const noResults = async ({ res, keyword }: { res: NextApiResponse; keyword: stri
     const imageUrl = await generateImageUrl({
         fontSize: 30,
         fontWeight: 600,
-        text: `No results${keyword ? ` for "${keyword}"` : ''}! Try a different keyword.`
+        text: [`No results${keyword ? ` for "${keyword}"` : ''}!`, 'Try a different keyword.']
     });
 
     const buttons: FrameDataButton[] = [{ label: 'Search', action: 'post' }];
@@ -1160,7 +1163,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         const imageUrl = await generateImageUrl({
             fontSize: 30,
             fontWeight: 600,
-            text: 'Search for an episode clip using the input below (v0.1) '
+            text: ['Search for an episode clip using the input below', 'v0.1']
         });
 
         const buttons: FrameDataButton[] = [{ label: 'Search', action: 'post' }];
@@ -1247,12 +1250,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
     const imageUrl = await generateImageUrl({
         fontSize: 28,
         fontWeight: 600,
-        text:
-            `${episodeTitle} [${format(parseISO(video.publishedAt), 'MMM d, y')}]` +
-            '\n\n' +
-            (match.text === null
+        text: [
+            `${episodeTitle} [${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
+            match.text === null
                 ? match.url
-                : `${match.text.before}${match.text.value}${match.text.after}`)
+                : `${match.text.before}${match.text.value}${match.text.after}`
+        ]
     });
 
     const buttons: FrameDataButton[] = [
