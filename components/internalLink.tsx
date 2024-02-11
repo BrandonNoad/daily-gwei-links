@@ -7,10 +7,6 @@ type Props = {
     [rest: string]: any;
 };
 
-const InternalLink = ({ href, children, ...rest }: Props) => (
-    <NextLink href={href} passHref>
-        <Link {...rest}>{children}</Link>
-    </NextLink>
-);
+const InternalLink = ({ href, ...rest }: Props) => <Link as={NextLink} href={href} {...rest} />;
 
 export default InternalLink;

@@ -82,6 +82,22 @@ export const fetchLatestVideo = async () => {
     return records.length > 0 ? recordToVideo(records[0]) : null;
 };
 
+export const fetchVideosByKeyword = async (keyword: string) => {
+    const base = getAirtableBase();
+
+    const results = await base<VideosRecordFields>('videos')
+        .select({
+            ...commonSelectParams,
+            pageSize: 100,
+            filterByFormula: `SEARCH("${keyword.toLowerCase()}", LOWER({description}))`
+        })
+        .firstPage();
+
+    const records = z.array(videosRecordSchema).parse(results);
+
+    return records.map(recordToVideo);
+};
+
 export const fetchAllVideos = async () => {
     const base = getAirtableBase();
 

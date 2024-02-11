@@ -216,6 +216,7 @@ const searchParamsSchema = z.object({
     videoId: z.string().optional()
 });
 
+// TODO: set maxDuration config?
 const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorResponse>) => {
     if (req.method !== 'POST') {
         return res.status(404).json({
