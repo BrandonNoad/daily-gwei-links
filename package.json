@@ -12,7 +12,6 @@
     "@chakra-ui/react": "^2.2.1",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
-    "@farcaster/core": "^0.14.0",
     "@vercel/og": "^0.6.2",
     "airtable": "^0.11.4",
     "axios": "^1.6.7",

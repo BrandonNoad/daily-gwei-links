@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import type { FrameActionMessage } from '@farcaster/core';
+// import type { FrameActionMessage } from '@farcaster/core';
 
 import { ethers } from 'ethers';
 import { z } from 'zod';
 import { parseISO, format } from 'date-fns';
 import Axios from 'axios';
-import { Message } from '@farcaster/core';
+// import { Message } from '@farcaster/core';
 
 import { fetchVideosByKeyword } from '../../../util/airtable';
 import { generateImageUrl } from '../../../util/ogImage';
@@ -963,7 +963,7 @@ const forbidden = async ({ res }: { res: NextApiResponse }) => {
         .status(200)
         .send(
             generateHtml({
-                title: '🔍 The Daily Gwei Refuel Search',
+                title: 'The Daily Gwei Refuel Search',
                 imageUrl,
                 buttons: []
             })
@@ -988,7 +988,7 @@ const noResults = async ({ res, keyword }: { res: NextApiResponse; keyword: stri
         .status(200)
         .send(
             generateHtml({
-                title: '🔍 The Daily Gwei Refuel Search',
+                title: 'The Daily Gwei Refuel Search',
                 imageUrl,
                 postUrl: postUrl.toString(),
                 buttons,
@@ -1041,43 +1041,43 @@ const fetchMessageData = async (
 ): Promise<
     { success: false } | { success: true; data: { fid: number } } //inputText: string | undefined; buttonIndex: number } }
 > => {
-    try {
-        const { data } = await Axios.post(
-            `${HUB_BASE_URL}/v1/validateMessage`,
-            hexStringToUint8Array(body.trustedData.messageBytes),
-            {
-                headers: { 'Content-Type': 'application/octet-stream' }
-            }
-        );
+    // try {
+    //     const { data } = await Axios.post(
+    //         `${HUB_BASE_URL}/v1/validateMessage`,
+    //         hexStringToUint8Array(body.trustedData.messageBytes),
+    //         {
+    //             headers: { 'Content-Type': 'application/octet-stream' }
+    //         }
+    //     );
 
-        const { isValid, message: messageJson } = validateMessageBodySchema.parse(data);
+    //     const { isValid, message: messageJson } = validateMessageBodySchema.parse(data);
 
-        if (!isValid) {
-            return { success: false };
+    //     if (!isValid) {
+    //         return { success: false };
+    //     }
+
+    //     const message = Message.fromJSON(messageJson) as FrameActionMessage;
+
+    //     // TODO: get inputText and buttonIndex from message.data
+    //     return {
+    //         success: true,
+    //         data: {
+    //             fid: message.data.fid
+    //             // inputText: message.data.frameActionBody.inputText,
+    //             // buttonIndex: message.data.frameActionBody.buttonIndex
+    //         }
+    //     };
+    // } catch (err) {
+    // TODO: Don't fall back to untrustedData
+    return {
+        success: true,
+        data: {
+            fid: body.untrustedData.fid
+            // inputText: body.untrustedData.inputText,
+            // buttonIndex: body.untrustedData.buttonIndex
         }
-
-        const message = Message.fromJSON(messageJson) as FrameActionMessage;
-
-        // TODO: get inputText and buttonIndex from message.data
-        return {
-            success: true,
-            data: {
-                fid: message.data.fid
-                // inputText: message.data.frameActionBody.inputText,
-                // buttonIndex: message.data.frameActionBody.buttonIndex
-            }
-        };
-    } catch (err) {
-        // TODO: Don't fall back to untrustedData
-        return {
-            success: true,
-            data: {
-                fid: body.untrustedData.fid
-                // inputText: body.untrustedData.inputText,
-                // buttonIndex: body.untrustedData.buttonIndex
-            }
-        };
-    }
+    };
+    // }
 };
 
 const searchParamsSchema = z.object({
@@ -1160,7 +1160,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         const imageUrl = await generateImageUrl({
             fontSize: 30,
             fontWeight: 600,
-            text: 'Search for an episode clip using the input below'
+            text: 'Search for an episode clip using the input below (v0.1) '
         });
 
         const buttons: FrameDataButton[] = [{ label: 'Search', action: 'post' }];
@@ -1174,7 +1174,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
             .status(200)
             .send(
                 generateHtml({
-                    title: '🔍 The Daily Gwei Refuel Search',
+                    title: 'The Daily Gwei Refuel Search',
                     imageUrl,
                     postUrl: postUrl.toString(),
                     buttons,
@@ -1297,7 +1297,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         .status(200)
         .send(
             generateHtml({
-                title: '🔍 The Daily Gwei Refuel Search',
+                title: 'The Daily Gwei Refuel Search',
                 imageUrl,
                 postUrl: postUrl.toString(),
                 buttons,
