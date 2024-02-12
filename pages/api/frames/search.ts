@@ -34,6 +34,29 @@ const contractAllowlist = [
 
 const ethereumAddressAllowlist: string[] = [];
 
+// {
+//   "messages": [
+//     {
+//       "data": {
+//         "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+//         "fid": 2,
+//         "timestamp": 73244540,
+//         "network": "FARCASTER_NETWORK_MAINNET",
+//         "verificationAddEthAddressBody": {
+//           "address": "0x91031dcfdea024b4d51e775486111d2b2a715871",
+//           "ethSignature": "tyxj1...x1cYzhyxw=",
+//           "blockHash": "0xd74860c4bbf574d5ad60f03a478a30f990e05ac723e138a5c860cdb3095f4296"
+//         }
+//       },
+//       "hash": "0xa505331746ec8c5110a94bdb098cd964e43a8f2b",
+//       "hashScheme": "HASH_SCHEME_BLAKE3",
+//       "signature": "bln1zIZM.../4riB9IVBQ==",
+//       "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+//       "signer": "0x78ff9...b6d62558c"
+//     }
+//   ],
+//   "nextPageToken": ""
+// }
 const verificationsByFidBodySchema = z.object({
     messages: z.array(
         z.object({
@@ -181,65 +204,102 @@ const bodySchema = z.object({
 
 type Body = z.infer<typeof bodySchema>;
 
-const validateMessageBodySchema = z.object({
-    isValid: z.boolean(),
-    message: z.string()
-});
-
-// From framesjs
-const hexStringToUint8Array = (hexstring: string): Uint8Array =>
-    new Uint8Array(hexstring.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
-
-// TODO: Also resolve with inputText and buttonIndex
-const fetchMessageData = async (
-    body: Body
-): Promise<
-    { success: false } | { success: true; data: { fid: number } } //inputText: string | undefined; buttonIndex: number } }
-> => {
-    // try {
-    //     const { data } = await Axios.post(
-    //         `${HUB_BASE_URL}/v1/validateMessage`,
-    //         hexStringToUint8Array(body.trustedData.messageBytes),
-    //         {
-    //             headers: { 'Content-Type': 'application/octet-stream' }
-    //         }
-    //     );
-
-    //     const { isValid, message: messageJson } = validateMessageBodySchema.parse(data);
-
-    //     if (!isValid) {
-    //         return { success: false };
-    //     }
-
-    //     const message = Message.fromJSON(messageJson) as FrameActionMessage;
-
-    //     // TODO: get inputText and buttonIndex from message.data
-    //     return {
-    //         success: true,
-    //         data: {
-    //             fid: message.data.fid
-    //             // inputText: message.data.frameActionBody.inputText,
-    //             // buttonIndex: message.data.frameActionBody.buttonIndex
-    //         }
-    //     };
-    // } catch (err) {
-    // TODO: Don't fall back to untrustedData
-    return {
-        success: true,
-        data: {
-            fid: body.untrustedData.fid
-            // inputText: body.untrustedData.inputText,
-            // buttonIndex: body.untrustedData.buttonIndex
-        }
-    };
-    // }
-};
-
 const searchParamsSchema = z.object({
     resultIdx: z.coerce.number().optional(),
     keyword: z.string().optional(),
     numButtons: z.coerce.number()
 });
+
+// {
+//   valid: true,
+//   message: {
+//     data: {
+//       type: 'MESSAGE_TYPE_FRAME_ACTION',
+//       fid: 8766,
+//       timestamp: 98291496,
+//       network: 'FARCASTER_NETWORK_MAINNET',
+//       frameActionBody: {
+//         url: 'aHR0cHM6Ly83NWJheXZpZXcuc29mdHdhcmVkZXZlbG9wZXIubmluamEvc2VhcmNoL2ZyYW1l',
+//         buttonIndex: 1,
+//         castId: { fid: 8766, hash: '0x0000000000000000000000000000000000000001' },
+//         inputText: ''
+//       }
+//     },
+//     hash: '0xfc1f078543272bb7a437ecc16f6769d96d1b8cde',
+//     hashScheme: 'HASH_SCHEME_BLAKE3',
+//     signature: 'cR8iDC06v5I9boE11+qaKtYt63HYSUJEtF6INVicoc7GiVr6wnpKnYWLIdaPGh2NinsI4kHnWscMvxXm+W32Bg==',
+//     signatureScheme: 'SIGNATURE_SCHEME_ED25519',
+//     signer: '0x1cdb93b63792830f278cb74c232ac0179b0bb134ca00cefa9d7e1f1478c88abb'
+//   }
+// }
+const validateMessageBodySchema = z.object({
+    valid: z.boolean(),
+    message: z.object({
+        data: z.object({
+            fid: z.number(),
+            frameActionBody: z.object({
+                buttonIndex: z.number(),
+                inputText: z.string().optional()
+            })
+        })
+    })
+});
+
+const validateMessage = async ({
+    trustedData,
+    untrustedData
+}: Body): Promise<
+    | { success: false }
+    | { success: true; data: { fid: number; inputText: string | undefined; buttonIndex: number } }
+> => {
+    // TODO: Remove this check once tested in production.
+    if (untrustedData.fid !== 8766) {
+        return {
+            success: true,
+            data: {
+                fid: untrustedData.fid,
+                inputText: untrustedData.inputText,
+                buttonIndex: untrustedData.buttonIndex
+            }
+        };
+    }
+
+    try {
+        const { data } = await Axios.post(
+            `${HUB_BASE_URL}/v1/validateMessage`,
+            Buffer.from(trustedData.messageBytes, 'hex'),
+            { headers: { 'Content-Type': 'application/octet-stream' } }
+        );
+
+        const { valid, message } = validateMessageBodySchema.parse(data);
+
+        if (!valid) {
+            return { success: false };
+        }
+
+        return {
+            success: true,
+            data: {
+                fid: message.data.fid,
+                // message.data.frameActionBody.inputText is an empty string even if the frame that
+                // POSTed the request did not have a text input, which contradicts the following
+                // comment from the spec:
+                // `"" if requested and no input, undefined if input not requested"`
+                inputText:
+                    untrustedData.inputText === undefined
+                        ? undefined
+                        : typeof message.data.frameActionBody.inputText === 'string'
+                        ? Buffer.from(message.data.frameActionBody.inputText, 'base64').toString(
+                              'utf8'
+                          )
+                        : undefined,
+                buttonIndex: message.data.frameActionBody.buttonIndex
+            }
+        };
+    } catch (err) {
+        return { success: false };
+    }
+};
 
 type ErrorResponse = {
     statusCode: number;
@@ -268,15 +328,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
 
     // -- Check AuthZ
 
-    const messageDataResult = await fetchMessageData(bodyParseResult.data);
+    const messageDataResult = await validateMessage(bodyParseResult.data);
 
-    // TODO: Don't fall back to untrustedData
-    const fid = messageDataResult.success
-        ? messageDataResult.data.fid
-        : bodyParseResult.data.untrustedData.fid;
+    if (!messageDataResult.success) {
+        return res.status(400).json({
+            statusCode: 400,
+            message: 'Bad Request'
+        });
+    }
 
-    // TODO: Don't fall back to untrustedData
-    const { inputText, buttonIndex } = bodyParseResult.data.untrustedData;
+    const { fid, inputText, buttonIndex } = messageDataResult.data;
 
     const verificationsByFidResponse = await Axios.get(`${HUB_BASE_URL}/v1/verificationsByFid`, {
         params: { fid: fid }
