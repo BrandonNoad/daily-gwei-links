@@ -252,18 +252,6 @@ const validateMessage = async ({
     | { success: false }
     | { success: true; data: { fid: number; inputText: string | undefined; buttonIndex: number } }
 > => {
-    // TODO: Remove this check once tested in production.
-    if (untrustedData.fid !== 8766) {
-        return {
-            success: true,
-            data: {
-                fid: untrustedData.fid,
-                inputText: untrustedData.inputText,
-                buttonIndex: untrustedData.buttonIndex
-            }
-        };
-    }
-
     try {
         const { data } = await Axios.post(
             `${HUB_BASE_URL}/v1/validateMessage`,
