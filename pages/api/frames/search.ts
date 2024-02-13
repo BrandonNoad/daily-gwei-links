@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-// import type { FrameActionMessage } from '@farcaster/core';
 
 import { ethers } from 'ethers';
 import { z } from 'zod';
 import { parseISO, format } from 'date-fns';
 import Axios from 'axios';
-// import { Message } from '@farcaster/core';
 
 import { fetchVideosByKeyword } from '../../../util/airtable';
 import { generateImageUrl } from '../../../util/ogImage';
@@ -57,7 +55,7 @@ const ethereumAddressAllowlist: string[] = [];
 //   ],
 //   "nextPageToken": ""
 // }
-const verificationsByFidBodySchema = z.object({
+const verificationsByFidResponseDataSchema = z.object({
     messages: z.array(
         z.object({
             data: z.object({
@@ -232,7 +230,7 @@ const searchParamsSchema = z.object({
 //     signer: '0x1cdb93b63792830f278cb74c232ac0179b0bb134ca00cefa9d7e1f1478c88abb'
 //   }
 // }
-const validateMessageBodySchema = z.object({
+const validateMessageResponseDataSchema = z.object({
     valid: z.boolean(),
     message: z.object({
         data: z.object({
@@ -259,7 +257,7 @@ const validateMessage = async ({
             { headers: { 'Content-Type': 'application/octet-stream' } }
         );
 
-        const { valid, message } = validateMessageBodySchema.parse(data);
+        const { valid, message } = validateMessageResponseDataSchema.parse(data);
 
         if (!valid) {
             return { success: false };
@@ -331,7 +329,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         params: { fid: fid }
     });
 
-    const { messages } = verificationsByFidBodySchema.parse(verificationsByFidResponse.data);
+    const { messages } = verificationsByFidResponseDataSchema.parse(
+        verificationsByFidResponse.data
+    );
 
     if (messages.length === 0) {
         return forbidden({ res });
