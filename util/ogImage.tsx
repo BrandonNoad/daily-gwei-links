@@ -19,20 +19,20 @@ export const generateImageUrl = async ({
     fontWeight: number;
     text: string | string[];
 }) => {
-    const fontsPath = path.join(fileURLToPath(import.meta.url), '..', '..', 'public', 'fonts');
+    // const fontsPath = path.join(fileURLToPath(import.meta.url), '..', '..', 'public', 'fonts');
 
-    const fontMeta = [
-        { filename: 'OpenSans-SemiBold.ttf', name: 'Open Sans', weight: 600 },
-        { filename: 'OpenSans-Bold.ttf', name: 'Open Sans', weight: 700 }
-    ];
+    // const fontMeta = [
+    //     { filename: 'OpenSans-SemiBold.ttf', name: 'Open Sans', weight: 600 },
+    //     { filename: 'OpenSans-Bold.ttf', name: 'Open Sans', weight: 700 }
+    // ];
 
-    const fonts = await Promise.all(
-        fontMeta.map(async ({ filename, name, weight }) => ({
-            name,
-            weight: weight as FontWeight,
-            data: await fs.readFile(path.join(fontsPath, filename))
-        }))
-    );
+    // const fonts = await Promise.all(
+    //     fontMeta.map(async ({ filename, name, weight }) => ({
+    //         name,
+    //         weight: weight as FontWeight,
+    //         data: await fs.readFile(path.join(fontsPath, filename))
+    //     }))
+    // );
 
     const imageResponse = new ImageResponse(
         (
@@ -78,8 +78,8 @@ export const generateImageUrl = async ({
         // Can pass other satori options here: https://github.com/vercel/satori
         {
             width: 800,
-            height: 418,
-            fonts
+            height: 418
+            // fonts
         }
     );
     const imgBuffer = await imageResponse?.arrayBuffer();
