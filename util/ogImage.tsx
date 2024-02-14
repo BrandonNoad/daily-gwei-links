@@ -1,7 +1,4 @@
 import { ImageResponse } from '@vercel/og';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import type { ImageResponseOptions } from '@vercel/og/dist/types';
 
@@ -19,21 +16,6 @@ export const generateImageUrl = async ({
     fontWeight: number;
     text: string | string[];
 }) => {
-    // const fontsPath = path.join(fileURLToPath(import.meta.url), '..', '..', 'public', 'fonts');
-
-    // const fontMeta = [
-    //     { filename: 'OpenSans-SemiBold.ttf', name: 'Open Sans', weight: 600 },
-    //     { filename: 'OpenSans-Bold.ttf', name: 'Open Sans', weight: 700 }
-    // ];
-
-    // const fonts = await Promise.all(
-    //     fontMeta.map(async ({ filename, name, weight }) => ({
-    //         name,
-    //         weight: weight as FontWeight,
-    //         data: await fs.readFile(path.join(fontsPath, filename))
-    //     }))
-    // );
-
     const imageResponse = new ImageResponse(
         (
             <div
@@ -79,7 +61,6 @@ export const generateImageUrl = async ({
         {
             width: 800,
             height: 418
-            // fonts
         }
     );
     const imgBuffer = await imageResponse?.arrayBuffer();

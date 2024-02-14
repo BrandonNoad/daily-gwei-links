@@ -56,7 +56,7 @@ const getFrameData = async ({
 }> => {
     if (frameIdx === 'title') {
         return {
-            text: `${video.title} [${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
+            text: `${video.title}\n[${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
             searchParams: new URLSearchParams({
                 frame: '0',
                 videoId: video.id,

@@ -6,10 +6,11 @@ import { parseISO, format } from 'date-fns';
 import Axios from 'axios';
 
 import { fetchVideosByKeyword } from '../../../util/airtable';
-import { generateImageUrl } from '../../../util/ogImage';
 
 const PAGE_TITLE = 'The Daily Gwei Refuel Search';
 const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
+const OG_IMAGE_API_BASE_URL =
+    process.env.OG_IMAGE_API_BASE_URL ?? 'https://util.softwaredeveloper.ninja';
 const CURRENT_URL = `${BASE_URL}/api/frames/search`;
 const HUB_BASE_URL = 'https://www.noderpc.xyz/farcaster-mainnet-hub';
 const CONTRACT_ABI = [
@@ -125,29 +126,38 @@ const generateHtml = ({
 };
 
 const forbidden = async ({ res }: { res: NextApiResponse }) => {
-    const imageUrl = await generateImageUrl({
-        fontSize: 30,
-        fontWeight: 600,
-        text: [
-            'Sorry, you are not authorized to use this frame!',
-            'Click this image to view the list of eligible NFT collections'
-        ]
-    });
+    const url = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+    url.search = new URLSearchParams({
+        template: 'tdg',
+        content: JSON.stringify({
+            style: { fontSize: 28, fontWeight: 600 },
+            data: [
+                'Sorry, you are not authorized to use this frame!',
+                'Click this image to view the list of eligible NFT collections'
+            ]
+        })
+    }).toString();
 
     return res.setHeader('Content-Type', 'text/html').send(
         generateHtml({
             title: PAGE_TITLE,
-            imageUrl
+            imageUrl: url.toString()
         })
     );
 };
 
 const noResults = async ({ res, keyword }: { res: NextApiResponse; keyword: string }) => {
-    const imageUrl = await generateImageUrl({
-        fontSize: 30,
-        fontWeight: 600,
-        text: [`No results${keyword ? ` for "${keyword}"` : ''}!`, 'Try a different keyword']
-    });
+    const url = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+    url.search = new URLSearchParams({
+        template: 'tdg',
+        content: JSON.stringify({
+            style: { fontSize: 28, fontWeight: 600 },
+            data: [
+                `No results${keyword ? ` for "${keyword}"` : ''}!`,
+                `${keyword ? 'Try a different keyword' : 'Please provide a keyword'}`
+            ]
+        })
+    }).toString();
 
     const buttons: FrameDataButton[] = [{ label: 'Search', action: 'post' }];
 
@@ -157,7 +167,7 @@ const noResults = async ({ res, keyword }: { res: NextApiResponse; keyword: stri
     return res.setHeader('Content-Type', 'text/html').send(
         generateHtml({
             title: PAGE_TITLE,
-            imageUrl,
+            imageUrl: url.toString(),
             postUrl: postUrl.toString(),
             buttons,
             isTextInput: true
@@ -366,11 +376,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
     // -- "Start" frame
 
     if (inputText === undefined) {
-        const imageUrl = await generateImageUrl({
-            fontSize: 30,
-            fontWeight: 600,
-            text: ['Search for an episode using the input below', '[Beta]']
-        });
+        const url = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+        url.search = new URLSearchParams({
+            template: 'tdg',
+            content: JSON.stringify({
+                style: { fontSize: 30, fontWeight: 600 },
+                data: ['Search for an episode using the input below\n[Beta]']
+            })
+        }).toString();
 
         const buttons: FrameDataButton[] = [{ label: 'Search', action: 'post' }];
 
@@ -380,7 +393,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         return res.setHeader('Content-Type', 'text/html').send(
             generateHtml({
                 title: PAGE_TITLE,
-                imageUrl,
+                imageUrl: url.toString(),
                 postUrl: postUrl.toString(),
                 buttons,
                 isTextInput: true
@@ -449,16 +462,22 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         episodeTitle = `The Daily Gwei Refuel #${titleMatch[1]}`;
     }
 
-    const imageUrl = await generateImageUrl({
-        fontSize: 28,
-        fontWeight: 600,
-        text: [
-            `${episodeTitle} [${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
-            match.text === null
-                ? match.url
-                : `${match.text.before}${match.text.value}${match.text.after}`
-        ]
-    });
+    const imageUrl = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+    imageUrl.search = new URLSearchParams({
+        template: 'tdg',
+        content: JSON.stringify({
+            style: { fontSize: 28, fontWeight: 600 },
+            data: [
+                {
+                    text: `${episodeTitle} [${format(parseISO(video.publishedAt), 'MMM d, y')}]`,
+                    style: { fontSize: 30, fontWeight: 700 }
+                },
+                match.text === null
+                    ? match.url
+                    : `${match.text.before}${match.text.value}${match.text.after}`
+            ]
+        })
+    }).toString();
 
     const buttons: FrameDataButton[] = [
         {
@@ -497,7 +516,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
     return res.setHeader('Content-Type', 'text/html').send(
         generateHtml({
             title: PAGE_TITLE,
-            imageUrl,
+            imageUrl: imageUrl.toString(),
             postUrl: postUrl.toString(),
             buttons,
             isTextInput: true

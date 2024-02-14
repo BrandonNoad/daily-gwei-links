@@ -3,20 +3,26 @@ import type { GetStaticProps, NextPage } from 'next';
 import NextHead from 'next/head';
 import { Text, Link, UnorderedList, ListItem } from '@chakra-ui/react';
 
-import { generateImageUrl } from '../../../util/ogImage';
 import Card from '../../../components/card';
 
 const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
+const OG_IMAGE_API_BASE_URL =
+    process.env.OG_IMAGE_API_BASE_URL ?? 'https://util.softwaredeveloper.ninja';
 
 export const getStaticProps: GetStaticProps = async () => {
+    const imageUrl = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+    imageUrl.search = new URLSearchParams({
+        template: 'tdg',
+        content: JSON.stringify({
+            style: { fontSize: 36, fontWeight: 700 },
+            data: ['🔍 The Daily Gwei Refuel Episode Search']
+        })
+    }).toString();
+
     return {
         props: {
             title: 'The Daily Gwei Refuel Search',
-            imageUrl: await generateImageUrl({
-                fontSize: 36,
-                fontWeight: 700,
-                text: '🔍 The Daily Gwei Refuel Episode Search'
-            })
+            imageUrl: imageUrl.toString()
         }
     };
 };
