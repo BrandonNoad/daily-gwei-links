@@ -6,9 +6,10 @@ import { parseISO, format } from 'date-fns';
 import Axios from 'axios';
 
 import { fetchLatestVideo } from '../../util/airtable';
-import { generateImageUrl } from '../../util/ogImage';
 
 const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
+const OG_IMAGE_API_BASE_URL =
+    process.env.OG_IMAGE_API_BASE_URL ?? 'https://util.softwaredeveloper.ninja';
 
 // https://hub.freefarcasterhub.com:3281/v1/userDataByFid?fid=8766&user_data_type=2
 // {
@@ -273,11 +274,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
 
     const frameData = await getFrameData({ video, frameIdx, fid });
 
-    const imageUrl = await generateImageUrl({
-        fontSize: frameIdx === 'title' ? 30 : 28,
-        fontWeight: 600,
-        text: frameData.text
-    });
+    const imageUrl = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+    imageUrl.search = new URLSearchParams({
+        template: 'tdg',
+        content: JSON.stringify({
+            style: { fontSize: frameIdx === 'title' ? 30 : 28, fontWeight: 600 },
+            data: [frameData.text]
+        })
+    }).toString();
 
     const postUrl = new URL(`${BASE_URL}/api/frames`);
     postUrl.search = frameData.searchParams.toString();
@@ -288,7 +292,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<string | ErrorR
         .send(
             generateHtml({
                 title: 'The Daily Gwei Refuel Show Notes',
-                imageUrl,
+                imageUrl: imageUrl.toString(),
                 postUrl: postUrl.toString(),
                 buttons: frameData.buttons
             })

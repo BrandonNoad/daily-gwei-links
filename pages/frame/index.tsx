@@ -4,23 +4,29 @@ import type { Video } from '../../util/airtable';
 import NextHead from 'next/head';
 
 import { fetchLatestVideo } from '../../util/airtable';
-import { generateImageUrl } from '../../util/ogImage';
 import VideoList from '../../components/videoList';
 
 const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
+const OG_IMAGE_API_BASE_URL =
+    process.env.OG_IMAGE_API_BASE_URL ?? 'https://util.softwaredeveloper.ninja';
 
 export const getStaticProps: GetStaticProps = async () => {
     const latestVideo = await fetchLatestVideo();
+
+    const imageUrl = new URL(`${OG_IMAGE_API_BASE_URL}/api/og/image`);
+    imageUrl.search = new URLSearchParams({
+        template: 'tdg',
+        content: JSON.stringify({
+            style: { fontSize: 36, fontWeight: 700 },
+            data: ['The Daily Gwei Refuel Show Notes']
+        })
+    }).toString();
 
     return {
         props: {
             title: 'The Daily Gwei Refuel Show Notes',
             latestVideo,
-            imageUrl: await generateImageUrl({
-                fontSize: 36,
-                fontWeight: 700,
-                text: 'The Daily Gwei Refuel Show Notes'
-            })
+            imageUrl: imageUrl.toString()
         }
     };
 };

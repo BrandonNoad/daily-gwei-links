@@ -253,6 +253,7 @@ const validateMessageResponseDataSchema = z.object({
     })
 });
 
+// TODO: Use https://foss.farchiver.xyz/hub to get a random hub URL.
 const validateMessage = async ({
     trustedData,
     untrustedData
