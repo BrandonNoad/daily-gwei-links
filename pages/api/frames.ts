@@ -80,7 +80,7 @@ const getFrameData = async ({
         let username = '';
         try {
             // https://hub.freefarcasterhub.com:3281 stopped working
-            const HUB_BASE_URL = 'https://www.noderpc.xyz/farcaster-mainnet-hub';
+            const HUB_BASE_URL = 'https://hub.pinata.cloud';
             const response = await Axios.get(`${HUB_BASE_URL}/v1/userDataByFid`, {
                 params: { fid: fid, user_data_type: 2 }
             });

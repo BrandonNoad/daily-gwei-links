@@ -12,7 +12,7 @@ const BASE_URL = process.env.BASE_URL ?? 'https://daily-gwei-links.vercel.app';
 const OG_IMAGE_API_BASE_URL =
     process.env.OG_IMAGE_API_BASE_URL ?? 'https://util.softwaredeveloper.ninja';
 const CURRENT_URL = `${BASE_URL}/api/frames/search`;
-const HUB_BASE_URL = 'https://www.noderpc.xyz/farcaster-mainnet-hub';
+const HUB_BASE_URL = 'https://hub.pinata.cloud';
 const CONTRACT_ABI = [
     {
         inputs: [{ internalType: 'address', name: 'owner', type: 'address' }],
