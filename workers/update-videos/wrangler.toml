@@ -1,0 +1,6 @@
+name = "daily-gwei-update-videos"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[triggers]
+crons = ["0 16 * * *"]  # Daily at 16:00 UTC (noon AST / 1 PM ADT)
